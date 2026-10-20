@@ -1,0 +1,52 @@
+name: Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Also caches cargo and registers problem matchers for clippy and rustfmt.
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          components: clippy, rustfmt
+      # The action's own panic matcher only knows the pre-1.73 panic format.
+      - name: register panic matcher
+        run: echo "::add-matcher::.github/rust-panic-matcher.json"
+      - name: cargo fmt
+        run: cargo fmt --check
+      - name: cargo clippy
+        run: cargo clippy --features datafusion-forecast/hub -- -D warnings
+      - name: cargo test
+        run: cargo test --locked
+      # Parity with the Python reference on Timestral-5M. The larger checkpoints run in the manual
+      # `Golden` workflow. Revisions are pinned: bumping one means regenerating its fixture.
+      - name: fetch Timestral-5M
+        run: crates/candle-timestral/scripts/fetch_checkpoint.sh Timestral-5M bdd20cfc15a3fea0e4cb5ccef37f8d3ca7aa335f "$RUNNER_TEMP/Timestral-5M"
+      - name: golden tests (5M)
+        run: "cargo test --locked -p candle-timestral --test golden -- --ignored golden_5m::"
+        env:
+          TIMESTRAL_5M_DIR: ${{ runner.temp }}/Timestral-5M
+
+  deny:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          # The action defaults to `--all-features`, which would pull in the
+          # optional `cuda`/`cudnn`/`mkl`/`metal`/`accelerate` features.
+          # Check the same default-feature graph as the rest of this workflow instead.
+          arguments: ""

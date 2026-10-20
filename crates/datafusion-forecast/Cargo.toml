@@ -1,0 +1,34 @@
+[package]
+name = "datafusion-forecast"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Time-series forecasting as Apache DataFusion SQL functions"
+readme = "README.md"
+
+[features]
+default = ["timestral"]
+timestral = ["dep:candle-timestral"]
+hub = ["timestral", "candle-timestral/hub"]
+accelerate = ["timestral", "candle-timestral/accelerate"]
+cuda = ["timestral", "candle-timestral/cuda"]
+cudnn = ["timestral", "candle-timestral/cudnn"]
+metal = ["timestral", "candle-timestral/metal"]
+mkl = ["timestral", "candle-timestral/mkl"]
+
+[dependencies]
+candle-timestral = { workspace = true, optional = true }
+datafusion.workspace = true
+
+[dev-dependencies]
+candle-core.workspace = true
+candle-nn.workspace = true
+datafusion = { workspace = true, features = ["sql", "nested_expressions"] }
+serde_json.workspace = true
+tokio.workspace = true
+
+[[example]]
+name = "sql"
+required-features = ["timestral"]

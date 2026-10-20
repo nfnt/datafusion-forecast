@@ -1,0 +1,30 @@
+name: Golden
+
+# Parity with the Python reference on all Timestral checkpoints (about 1.4 GB). Manual only; the
+# `Check` workflow runs Timestral-5M on every push. Revisions are pinned: bumping one means
+# regenerating its fixture with `scripts/make_golden.py`.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  golden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: fetch checkpoints
+        run: |
+          fetch=crates/candle-timestral/scripts/fetch_checkpoint.sh
+          $fetch Timestral-5M bdd20cfc15a3fea0e4cb5ccef37f8d3ca7aa335f "$RUNNER_TEMP/Timestral-5M"
+          $fetch Timestral-28M 49b26409ac87b5935539a5d8ffe7f397b720db47 "$RUNNER_TEMP/Timestral-28M"
+          $fetch Timestral-123M 5a147287addda85f6acd8da3fb8858fe9af7e8f7 "$RUNNER_TEMP/Timestral-123M"
+          $fetch Timestral-209M 9874d252ab0aae16f7f7c999f98f98d6ad7d8365 "$RUNNER_TEMP/Timestral-209M"
+      - name: golden tests
+        run: cargo test --release --locked -p candle-timestral --test golden -- --ignored
+        env:
+          TIMESTRAL_5M_DIR: ${{ runner.temp }}/Timestral-5M
+          TIMESTRAL_28M_DIR: ${{ runner.temp }}/Timestral-28M
+          TIMESTRAL_123M_DIR: ${{ runner.temp }}/Timestral-123M
+          TIMESTRAL_209M_DIR: ${{ runner.temp }}/Timestral-209M

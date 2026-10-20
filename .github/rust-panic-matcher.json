@@ -1,0 +1,19 @@
+{
+  "problemMatcher": [
+    {
+      "owner": "rust-panic-location",
+      "pattern": [
+        {
+          "regexp": "^thread '[^']+'(?: \\(\\d+\\))? panicked at (.+):(\\d+):(\\d+):$",
+          "file": 1,
+          "line": 2,
+          "column": 3
+        },
+        {
+          "regexp": "^(.+)$",
+          "message": 1
+        }
+      ]
+    }
+  ]
+}
