@@ -114,13 +114,17 @@ fn default_quantile_width_factor() -> f64 {
 }
 
 impl Config {
+    /// Read and validate a checkpoint's `config.json`, e.g. to build a [`TimestralModel`]
+    /// over weights from a custom `VarBuilder`.
+    ///
+    /// [`TimestralModel`]: crate::TimestralModel
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
         let config: Self = serde_json::from_str(&std::fs::read_to_string(path)?)?;
         config.validate()?;
         Ok(config)
     }
 
-    pub fn validate(&self) -> Result<()> {
+    pub(crate) fn validate(&self) -> Result<()> {
         let fail = |msg: String| Err(Error::Config(msg));
         if self.num_heads == 0 || !self.d_model.is_multiple_of(self.num_heads) {
             return fail(format!(

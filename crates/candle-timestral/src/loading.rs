@@ -3,7 +3,7 @@
 
 use std::{
     collections::HashSet,
-    path::{Path, PathBuf},
+    path::Path,
     sync::{Arc, Mutex},
 };
 
@@ -12,13 +12,13 @@ use candle_nn::{Init, VarBuilder, var_builder::SimpleBackend};
 
 use crate::{Config, Error, Result, TimestralModel};
 
-pub const CONFIG_FILE: &str = "config.json";
-pub const WEIGHTS_FILE: &str = "model.safetensors";
+pub(crate) const CONFIG_FILE: &str = "config.json";
+pub(crate) const WEIGHTS_FILE: &str = "model.safetensors";
 
 /// Build the model from `<dir>/config.json` and load `<dir>/model.safetensors` (float32).
 ///
 /// Loading is strict: a missing, misshapen or unused tensor is an error.
-pub fn load_model(dir: impl AsRef<Path>, device: &Device) -> Result<TimestralModel> {
+pub(crate) fn load_model(dir: impl AsRef<Path>, device: &Device) -> Result<TimestralModel> {
     let dir = dir.as_ref();
     let config = Config::from_file(dir.join(CONFIG_FILE))?;
     // SAFETY: the weights file is memory-mapped read-only and must not change while loaded.
@@ -46,31 +46,12 @@ pub fn load_model(dir: impl AsRef<Path>, device: &Device) -> Result<TimestralMod
 /// Download `config.json` and `model.safetensors` of a Hub repo (e.g. `mistralai/Timestral-5M`)
 /// to the Hugging Face cache, or find them there; returns their directory.
 #[cfg(feature = "hub")]
-pub(crate) fn download(repo_id: &str) -> Result<PathBuf> {
+pub(crate) fn download(repo_id: &str) -> Result<std::path::PathBuf> {
     let (owner, name) = hf_hub::split_id(repo_id);
     let repo = hf_hub::HFClientSync::new()?.model(owner, name);
     let config = repo.download_file().filename(CONFIG_FILE).send()?;
     repo.download_file().filename(WEIGHTS_FILE).send()?;
     Ok(config.parent().map(Path::to_path_buf).unwrap_or_default())
-}
-
-/// Resolve a local checkpoint directory, or a Hub repo id with the `hub` feature.
-pub fn resolve_checkpoint(path_or_repo_id: &str) -> Result<PathBuf> {
-    let path = PathBuf::from(path_or_repo_id);
-    if path.is_dir() {
-        return Ok(path);
-    }
-    if path.exists() {
-        return Err(Error::Input(format!(
-            "{path_or_repo_id:?} is a file; pass the directory holding {CONFIG_FILE} and {WEIGHTS_FILE}"
-        )));
-    }
-    #[cfg(feature = "hub")]
-    return download(path_or_repo_id);
-    #[cfg(not(feature = "hub"))]
-    Err(Error::Input(format!(
-        "{path_or_repo_id:?} is not a local directory (enable the `hub` feature to download from the Hugging Face Hub)"
-    )))
 }
 
 /// Records the tensors the model reads, to catch checkpoint tensors it never uses.

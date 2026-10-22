@@ -1,7 +1,6 @@
 //! Forecast two stores' hourly sales in SQL, with a promotion flag known in advance.
 //!
 //! ```sh
-//! cargo run --release -p datafusion-forecast --example sql -- path/to/Timestral
 //! cargo run --release -p datafusion-forecast --features hub --example sql -- mistralai/Timestral-5M
 //! ```
 
@@ -16,21 +15,17 @@ use datafusion::{
     error::{DataFusionError, Result},
     prelude::SessionContext,
 };
-use datafusion_forecast::{
-    Timestral,
-    candle_timestral::{TimestralForecaster, loading::resolve_checkpoint},
-};
+use datafusion_forecast::{Timestral, candle_timestral::TimestralForecaster};
 
 const CONTEXT: usize = 24 * 21;
 const HORIZON: usize = 24;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let checkpoint = std::env::args()
+    let repo_id = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "mistralai/Timestral-5M".to_string());
-    let forecaster = resolve_checkpoint(&checkpoint)
-        .and_then(|dir| TimestralForecaster::from_dir(dir, &Device::Cpu))
+    let forecaster = TimestralForecaster::from_hub(&repo_id, &Device::Cpu)
         .map_err(|e| DataFusionError::External(Box::new(e)))?;
 
     let ctx = SessionContext::new();

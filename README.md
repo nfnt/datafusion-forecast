@@ -44,9 +44,10 @@ cargo run --release -p datafusion-forecast --features hub --example sql -- mistr
 cargo run --release -p candle-timestral --features hub --example forecast -- mistralai/Timestral-5M
 ```
 
-Both examples also take a local checkpoint directory. Both crates forward Candle's backend features: `metal` (Apple
-GPUs), `cuda` and `cudnn` (NVIDIA GPUs), `accelerate` (Apple's Accelerate framework on the CPU) and `mkl` (Intel MKL
-on the CPU). For a GPU, pass its device to `TimestralForecaster::from_dir`, e.g. `Device::new_cuda(0)?`.
+The examples take a Hub repo id; `TimestralForecaster::from_dir` loads a local checkpoint directory. Both crates
+forward Candle's backend features: `metal` (Apple GPUs), `cuda` and `cudnn` (NVIDIA GPUs), `accelerate` (Apple's
+Accelerate framework on the CPU) and `mkl` (Intel MKL on the CPU). For a GPU, pass its device to
+`TimestralForecaster::from_dir`, e.g. `Device::new_cuda(0)?`.
 
 ## `forecast(ts, targets, horizon [, past [, known]])`
 
