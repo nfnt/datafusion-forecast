@@ -1,5 +1,11 @@
 # candle-timestral
 
+[![crates.io](https://img.shields.io/crates/v/candle-timestral.svg)](https://crates.io/crates/candle-timestral)
+[![docs.rs](https://img.shields.io/docsrs/candle-timestral)](https://docs.rs/candle-timestral)
+[![CI](https://github.com/nfnt/datafusion-forecast/actions/workflows/check.yml/badge.svg)](https://github.com/nfnt/datafusion-forecast/actions/workflows/check.yml)
+[![license](https://img.shields.io/crates/l/candle-timestral.svg)](https://github.com/nfnt/datafusion-forecast/blob/main/LICENSE)
+[![MSRV](https://img.shields.io/crates/msrv/candle-timestral.svg)](https://crates.io/crates/candle-timestral)
+
 Inference for Timestral checkpoints (e.g. [`mistralai/Timestral-5M`](https://huggingface.co/mistralai/Timestral-5M))
 in Rust with [Candle](https://github.com/huggingface/candle), ported from the reference Python package. It loads the
 released `config.json` + `model.safetensors` and reproduces `TimestralForecaster.forecast`: multivariate context,
