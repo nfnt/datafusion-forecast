@@ -36,6 +36,7 @@ impl Mask {
         }
     }
 
+    #[cfg(test)]
     pub fn get(&self, b: usize, i: usize, j: usize) -> bool {
         self.data[(b * self.queries + i) * self.keys + j]
     }
@@ -86,6 +87,7 @@ pub fn enc_key_validity(obs_per_patch: &[bool], n: usize, attend_missing: bool) 
 }
 
 /// Causal encoder mask over valid keys, with the diagonal always open.
+#[cfg(test)]
 #[inline]
 fn enc_causal(key_valid: &[bool], i: usize, j: usize) -> bool {
     (j <= i && key_valid[j]) || i == j
@@ -95,6 +97,8 @@ fn enc_causal(key_valid: &[bool], i: usize, j: usize) -> bool {
 ///
 /// The encoder is causal; every decoder token reads the whole valid context and its own
 /// causal decoder chain; the context never reads the horizon.
+/// Materialized reference for [`forecast_time_pattern`] and [`time_key_bias`], used by tests.
+#[cfg(test)]
 pub fn forecast_time_mask(context_len: usize, horizon: usize, key_valid: &[bool]) -> Mask {
     let ll = context_len;
     let rows = key_valid.len() / ll;
@@ -128,6 +132,8 @@ pub fn forecast_positions(context_len: usize, horizon: usize, first_obs: &[usize
 ///
 /// `min_context` is the first decoded patch of each row; decoder positions before it are
 /// inactive.
+/// Materialized reference for [`two_stream_time_patterns`] and [`time_key_bias`], used by tests.
+#[cfg(test)]
 pub fn two_stream_time_mask(
     min_context: &[usize],
     n: usize,
@@ -203,7 +209,7 @@ pub fn two_stream_variate_mask(
 /// underflows to exactly 0 on these keys, as on `-inf`, so their outputs are unchanged.
 pub const INVALID_KEY_BIAS: f32 = -1e30;
 
-/// `(1, L+h, L+h)` time pattern of [`forecast_time_mask`] without key validity: every row
+/// `(1, L+h, L+h)` time pattern of `forecast_time_mask` without key validity: every row
 /// shares it, and [`time_key_bias`] adds the validity of each row's keys.
 pub fn forecast_time_pattern(context_len: usize, horizon: usize) -> Mask {
     let ll = context_len;
@@ -215,7 +221,7 @@ pub fn forecast_time_pattern(context_len: usize, horizon: usize) -> Mask {
     })
 }
 
-/// `(2, 2N, 2N)` time patterns of [`two_stream_time_mask`] without key validity: index 0
+/// `(2, 2N, 2N)` time patterns of `two_stream_time_mask` without key validity: index 0
 /// for causal rows, 1 for bidirectional (known-future covariate) rows.
 ///
 /// Every row decodes from patch `min_context`.

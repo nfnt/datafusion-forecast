@@ -110,10 +110,7 @@ fn symmetric_averaging_is_odd_with_covariates() {
         series(2, 1, 144, 2),
     );
     let neg = |v: &[f32]| v.iter().map(|x| -x).collect::<Vec<f32>>();
-    let opts = ForecastOptions {
-        clip_nonnegative: false,
-        ..ForecastOptions::new(24)
-    };
+    let opts = ForecastOptions::new(24).with_clip_nonnegative(false);
     let input = ForecastInput::new(&x, 2, 1)
         .with_past_covariates(&past, 2)
         .with_known_covariates(&known, 1);
@@ -172,10 +169,7 @@ fn symmetric_averaging_needs_symmetric_levels() {
     let input = ForecastInput::univariate(&x);
     let err = fc.forecast(&input, &ForecastOptions::new(4)).unwrap_err();
     assert!(err.to_string().contains("symmetric about 0.5"), "{err}");
-    let options = ForecastOptions {
-        symmetric_averaging: false,
-        ..ForecastOptions::new(4)
-    };
+    let options = ForecastOptions::new(4).with_symmetric_averaging(false);
     assert!(fc.forecast(&input, &options).is_ok());
 }
 
@@ -216,9 +210,8 @@ fn checkpoint_round_trip_is_strict() {
         Tensor::zeros(3, DType::F32, &Device::Cpu).unwrap(),
     );
     candle_core::safetensors::save(&tensors, dir.join("model.safetensors")).unwrap();
-    let err = TimestralForecaster::from_dir(&dir, &Device::Cpu)
-        .err()
-        .expect("unused tensor must fail");
+    let err =
+        TimestralForecaster::from_dir(&dir, &Device::Cpu).expect_err("unused tensor must fail");
     assert!(
         err.to_string().contains("transformer.layers.9.extra"),
         "{err}"

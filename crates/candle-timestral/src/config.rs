@@ -13,6 +13,7 @@ use crate::{Error, Result};
 /// The attention sublayers a transformer layer runs before its shared MLP.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum LayerKind {
     Time,
     Variate,
@@ -22,7 +23,7 @@ pub enum LayerKind {
 
 impl LayerKind {
     /// Ordered attention axes of the layer; `true` is the time axis.
-    pub fn axes(self) -> &'static [bool] {
+    pub(crate) fn axes(self) -> &'static [bool] {
         match self {
             LayerKind::Time => &[true],
             LayerKind::Variate => &[false],
@@ -34,6 +35,7 @@ impl LayerKind {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum AttentionGate {
     None,
     /// The attention output is multiplied by `sigmoid(x @ W_g)` before the output projection.
@@ -43,6 +45,7 @@ pub enum AttentionGate {
 /// Architecture and decode settings of a Timestral checkpoint.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+#[non_exhaustive]
 pub struct Config {
     /// Time steps per patch.
     pub patch_size: usize,
@@ -153,12 +156,12 @@ impl Config {
         Ok(())
     }
 
-    pub fn head_dim(&self) -> usize {
+    pub(crate) fn head_dim(&self) -> usize {
         self.d_model / self.num_heads
     }
 
     /// Head dimensions rotated by RoPE; the rest pass through unrotated.
-    pub fn rope_dim(&self) -> usize {
+    pub(crate) fn rope_dim(&self) -> usize {
         (self.head_dim() as f64 * self.rope_partial_factor) as usize
     }
 

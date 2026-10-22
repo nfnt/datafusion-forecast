@@ -4,6 +4,7 @@ use datafusion::common::Result;
 
 /// One batch of series with equal context length `T`; every slice is NaN for missing.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct ForecastRequest<'a> {
     /// Number of series `B`.
     pub batch: usize,
@@ -19,6 +20,33 @@ pub struct ForecastRequest<'a> {
     pub past: Option<(&'a [f32], usize)>,
     /// `(B, C, T + H)` covariates known over the context and the horizon, and `C`.
     pub known: Option<(&'a [f32], usize)>,
+}
+
+impl<'a> ForecastRequest<'a> {
+    /// `context` shaped `(batch, variates, T)`, forecasting `horizon` steps.
+    pub fn new(context: &'a [f32], batch: usize, variates: usize, horizon: usize) -> Self {
+        Self {
+            batch,
+            variates,
+            context_len: context.len() / (batch * variates).max(1),
+            horizon,
+            context,
+            past: None,
+            known: None,
+        }
+    }
+
+    /// `(batch, channels, T)` covariates known over the context only.
+    pub fn with_past(mut self, values: &'a [f32], channels: usize) -> Self {
+        self.past = Some((values, channels));
+        self
+    }
+
+    /// `(batch, channels, T + horizon)` covariates known over the context and the horizon.
+    pub fn with_known(mut self, values: &'a [f32], channels: usize) -> Self {
+        self.known = Some((values, channels));
+        self
+    }
 }
 
 /// A model behind the `forecast` aggregate.

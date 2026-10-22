@@ -21,6 +21,7 @@ use crate::{
 
 /// What a packed row is to the model.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Role {
     /// A series to forecast.
     Target,
@@ -39,6 +40,14 @@ pub struct TimestralModel {
     /// `width_factor * dp` per quantile level, `dp` being the probability gap to the next level inward.
     quantile_widths: Vec<f32>,
     device: Device,
+}
+
+impl std::fmt::Debug for TimestralModel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TimestralModel")
+            .field("config", &self.config)
+            .finish_non_exhaustive()
+    }
 }
 
 impl TimestralModel {
@@ -87,7 +96,7 @@ impl TimestralModel {
     ///
     /// Returns `(scaled, loc, scale)`: `scaled` is `(R, len)`, `loc` and `scale` are per
     /// patch, `(R, len / patch_size)`.
-    pub fn scale(
+    pub(crate) fn scale(
         &self,
         inputs: &[f32],
         observed: &[bool],
@@ -109,6 +118,10 @@ impl TimestralModel {
     }
 
     /// Forecast one block of `horizon_patches` patches after a packed context.
+    ///
+    /// This is the raw network below [`TimestralForecaster`](crate::TimestralForecaster), which
+    /// does the scaling, row assembly and decoding around it. It is low-level and may change
+    /// between 0.x releases.
     ///
     /// - `inputs`, `observed`: `(R, T)` context values and observation mask, `T` a multiple
     ///   of the patch size.

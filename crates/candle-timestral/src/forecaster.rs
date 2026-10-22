@@ -27,6 +27,7 @@ use crate::{
 
 /// Covariate rows `(B, channels, length)`; NaN marks a missing value.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct Covariates<'a> {
     pub values: &'a [f32],
     pub channels: usize,
@@ -34,6 +35,7 @@ pub struct Covariates<'a> {
 
 /// The context to forecast from, with optional covariates.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct ForecastInput<'a> {
     /// `(batch, variates, T)` values; NaN marks a missing value. The variates of a series
     /// are forecast jointly.
@@ -93,6 +95,7 @@ impl<'a> ForecastInput<'a> {
 }
 
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct ForecastOptions {
     /// Horizon in time steps.
     pub prediction_length: usize,
@@ -110,10 +113,21 @@ impl ForecastOptions {
             clip_nonnegative: true,
         }
     }
+
+    pub fn with_symmetric_averaging(mut self, enabled: bool) -> Self {
+        self.symmetric_averaging = enabled;
+        self
+    }
+
+    pub fn with_clip_nonnegative(mut self, enabled: bool) -> Self {
+        self.clip_nonnegative = enabled;
+        self
+    }
 }
 
 /// Quantile forecast `(batch, variates, horizon, Q)`, sorted along the quantile axis.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct Forecast {
     pub quantiles: Vec<f32>,
     pub batch: usize,
@@ -189,13 +203,24 @@ struct Assembled {
 pub struct TimestralForecaster {
     model: TimestralModel,
     /// Context cap in time steps (most recent kept); defaults to the trained context length.
-    pub max_context: usize,
+    max_context: usize,
     per_shot_horizon_patches: usize,
     /// Clamp forecasts to `[min - k * s, max + k * s]` of the observed context, `s` being
     /// the scale of the last context patch. 0 disables.
-    pub quantile_real_cap_k: f32,
+    quantile_real_cap_k: f32,
     /// Fed-back medians at or above this magnitude become 0.
-    pub extreme_value_threshold: f32,
+    extreme_value_threshold: f32,
+}
+
+impl std::fmt::Debug for TimestralForecaster {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TimestralForecaster")
+            .field("max_context", &self.max_context)
+            .field("per_shot_horizon_patches", &self.per_shot_horizon_patches)
+            .field("quantile_real_cap_k", &self.quantile_real_cap_k)
+            .field("extreme_value_threshold", &self.extreme_value_threshold)
+            .finish_non_exhaustive()
+    }
 }
 
 impl TimestralForecaster {
@@ -227,10 +252,43 @@ impl TimestralForecaster {
         self
     }
 
+    /// Clamp forecasts to `[min - k * s, max + k * s]` of the observed context, `s` being
+    /// the scale of the last context patch. 0 disables; defaults to 1e4.
+    pub fn with_quantile_real_cap_k(mut self, k: f32) -> Self {
+        self.quantile_real_cap_k = k;
+        self
+    }
+
+    /// Fed-back medians at or above this magnitude become 0; defaults to 1e30.
+    pub fn with_extreme_value_threshold(mut self, threshold: f32) -> Self {
+        self.extreme_value_threshold = threshold;
+        self
+    }
+
     /// Patches decoded per block, capped at the trained block size.
     pub fn with_per_shot_horizon_patches(mut self, patches: usize) -> Self {
         self.per_shot_horizon_patches = patches.clamp(1, self.config().block_size);
         self
+    }
+
+    /// Context cap in time steps; see [`with_max_context`](Self::with_max_context).
+    pub fn max_context(&self) -> usize {
+        self.max_context
+    }
+
+    /// See [`with_quantile_real_cap_k`](Self::with_quantile_real_cap_k).
+    pub fn quantile_real_cap_k(&self) -> f32 {
+        self.quantile_real_cap_k
+    }
+
+    /// See [`with_extreme_value_threshold`](Self::with_extreme_value_threshold).
+    pub fn extreme_value_threshold(&self) -> f32 {
+        self.extreme_value_threshold
+    }
+
+    /// See [`with_per_shot_horizon_patches`](Self::with_per_shot_horizon_patches).
+    pub fn per_shot_horizon_patches(&self) -> usize {
+        self.per_shot_horizon_patches
     }
 
     pub fn model(&self) -> &TimestralModel {
