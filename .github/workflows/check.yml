@@ -5,6 +5,8 @@ on:
     branches:
       - main
   pull_request:
+  # Run by the release workflow before publishing.
+  workflow_call:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

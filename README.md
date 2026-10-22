@@ -139,6 +139,10 @@ Without checkpoints the tests run on a tiny random-weight model. The parity test
 Python package in `crates/candle-timestral/tests/fixtures`, regenerated with
 `crates/candle-timestral/scripts/make_golden.py`; Rust matches them to a relative error below 1e-4.
 
+## Releases
+
+Release notes for each version are on [GitHub Releases](https://github.com/nfnt/datafusion-forecast/releases).
+
 ## License
 
 Apache 2.0, see [LICENSE](LICENSE). The code is a port of [mistralai/timestral](https://github.com/mistralai/timestral)
