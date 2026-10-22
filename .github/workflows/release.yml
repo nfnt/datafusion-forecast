@@ -1,0 +1,120 @@
+name: Release
+
+# Publishes both crates and creates a GitHub Release when a `vX.Y.Z` tag is pushed. Both crates share
+# one version, `[workspace.package] version`, which must match the tag, as must the `candle-timestral`
+# requirement in `[workspace.dependencies]`.
+#
+# To release, bump both (and Cargo.lock, with `cargo check`) in a PR, merge it, then tag the merged
+# commit: `git tag -s vX.Y.Z origin/main && git push origin vX.Y.Z`, or create the release in the
+# GitHub UI.
+#
+# Nothing is published unless the `Check` workflow passes on the tagged commit.
+# Crates whose version is already on crates.io are skipped, so a partially failed release can be
+# re-run. Publishing uses crates.io trusted publishing; the first publish of a crate must be done
+# manually.
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  # The full CI on the tagged commit: publishing can't be undone, only yanked.
+  check:
+    uses: ./.github/workflows/check.yml
+
+  release:
+    needs: check
+    runs-on: ubuntu-latest
+    # Must match the trusted publisher configuration on crates.io.
+    environment: release
+    permissions:
+      contents: write # create the GitHub Release
+      id-token: write # crates.io trusted publishing
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # git-cliff needs the full history and tags.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          # Don't restore caches written by other runs into a job that publishes.
+          cache: false
+
+      - name: verify tag
+        id: verify
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "::error::$GITHUB_REF_NAME is not on main"; exit 1; }
+          meta=$(cargo metadata --locked --no-deps --format-version 1)
+          bad=$(jq -r --arg v "$version" '.packages[] | select(.publish != [])
+                 | select(.version != $v) | "\(.name) \(.version)"' <<<"$meta")
+          if [ -n "$bad" ]; then echo "::error::tag $GITHUB_REF_NAME does not match $bad"; exit 1; fi
+          # Workspace dependencies must require exactly the released version.
+          bad=$(jq -r --arg r "^$version" '.packages[] as $p | $p.dependencies[]
+                 | select(.path != null and .kind == null and .req != $r)
+                 | "\($p.name) -> \(.name) \(.req)"' <<<"$meta")
+          if [ -n "$bad" ]; then echo "::error::bump the workspace dependency: $bad"; exit 1; fi
+          args=""
+          for name in $(jq -r '.packages[] | select(.publish != []) | .name' <<<"$meta"); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' \
+              -A 'nfnt/datafusion-forecast release workflow' \
+              "https://crates.io/api/v1/crates/$name/$version")
+            case "$code" in
+              200) echo "$name $version is already on crates.io, skipping" ;;
+              404) args="$args -p $name" ;;
+              *) echo "::error::crates.io returned $code for $name"; exit 1 ;;
+            esac
+          done
+          echo "publish_args=$args" >> "$GITHUB_OUTPUT"
+          # The notes of a stable release cover all commits since the previous stable release,
+          # including those already in its pre-releases. `git cliff --latest` doesn't honour
+          # ignored tags, so pass the range explicitly.
+          exclude=()
+          if [[ "$version" != *-* ]]; then
+            exclude=(--exclude '*-*')
+            echo "GIT_CLIFF__GIT__IGNORE_TAGS=^v[0-9]+\.[0-9]+\.[0-9]+-" >> "$GITHUB_ENV"
+          fi
+          if prev=$(git describe --tags --abbrev=0 --match 'v[0-9]*' "${exclude[@]}" "$GITHUB_SHA^" 2>/dev/null); then
+            echo "cliff_range=$prev..$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+          else
+            # No earlier release: the checkout is at the tag, so the full history is this release.
+            echo "cliff_range=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: rust-lang/crates-io-auth-action@v1
+        if: steps.verify.outputs.publish_args != ''
+        id: auth
+      # Publishes in dependency order and waits for each crate to appear in the index.
+      - name: cargo publish
+        if: steps.verify.outputs.publish_args != ''
+        run: cargo publish --locked ${{ steps.verify.outputs.publish_args }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+      - name: generate release notes
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: ${{ steps.verify.outputs.cliff_range }}
+        env:
+          OUTPUT: RELEASE_NOTES.md
+      # A release created in the GitHub UI already exists; fill in its notes.
+      - name: create or update GitHub Release
+        run: |
+          pre=""; [[ "$GITHUB_REF_NAME" == *-* ]] && pre="--prerelease"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" $pre --notes-file RELEASE_NOTES.md
+          else
+            gh release create "$GITHUB_REF_NAME" --verify-tag $pre \
+              --title "$GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
