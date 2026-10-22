@@ -2,7 +2,7 @@
 
 Forecasts with Mistral AI's [Timestral](https://github.com/mistralai/timestral) models as an
 [Apache DataFusion](https://datafusion.apache.org) aggregate function. The model runs in Rust on top of the
-[`candle-timestral`](../candle-timestral) crate.
+[`candle-timestral`](https://github.com/nfnt/datafusion-forecast/tree/main/crates/candle-timestral) crate.
 
 ```rust
 use std::sync::Arc;
@@ -27,10 +27,10 @@ FROM (
 `horizon` steps, a median and quantiles for every field of `targets`. `past` and `known` are optional covariates
 known over the context only, or over the context and the horizon. The arguments, the handling of calendar steps
 and sparse groups, the options and the limitations are documented in the
-[repository README](../../README.md#forecastts-targets-horizon--past--known).
+[repository README](https://github.com/nfnt/datafusion-forecast#forecastts-targets-horizon--past--known).
 
 The features `hub`, `metal`, `cuda`, `cudnn`, `accelerate` and `mkl` are forwarded to `candle-timestral`; see
-[its README](../candle-timestral) for what they do.
+[its README](https://github.com/nfnt/datafusion-forecast/tree/main/crates/candle-timestral) for what they do.
 
 ## Example and tests
 
