@@ -1,23 +1,19 @@
 //! Forecast a noisy daily-seasonal series with a Timestral checkpoint.
 //!
 //! ```sh
-//! cargo run --release --example forecast -- path/to/Timestral
-//! cargo run --release --features hub --example forecast -- mistralai/Timestral
+//! cargo run --release --features hub --example forecast -- mistralai/Timestral-5M
 //! ```
 
 use std::time::Instant;
 
 use candle_core::Device;
-use candle_timestral::{
-    ForecastInput, ForecastOptions, TimestralForecaster, loading::resolve_checkpoint,
-};
+use candle_timestral::{ForecastInput, ForecastOptions, TimestralForecaster};
 
 fn main() -> candle_timestral::Result<()> {
-    let checkpoint = std::env::args()
+    let repo_id = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "mistralai/Timestral-5M".to_string());
-    let dir = resolve_checkpoint(&checkpoint)?;
-    let forecaster = TimestralForecaster::from_dir(&dir, &Device::Cpu)?;
+    let forecaster = TimestralForecaster::from_hub(&repo_id, &Device::Cpu)?;
 
     // Hourly series with a daily cycle, a trend and some deterministic noise.
     let context: Vec<f32> = (0..2000)

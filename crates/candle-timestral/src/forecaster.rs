@@ -237,14 +237,14 @@ impl TimestralForecaster {
 
     /// Load a checkpoint directory holding `config.json` and `model.safetensors`.
     pub fn from_dir(dir: impl AsRef<Path>, device: &Device) -> Result<Self> {
-        Ok(Self::new(crate::load_model(dir, device)?))
+        Ok(Self::new(crate::loading::load_model(dir, device)?))
     }
 
-    /// Load a local checkpoint directory or a Hugging Face Hub repo id such as
-    /// `mistralai/Timestral-5M`; files are cached by `hf-hub`.
+    /// Load a checkpoint from a Hugging Face Hub repo such as `mistralai/Timestral-5M`;
+    /// files are cached by `hf-hub`. Use [`from_dir`](Self::from_dir) for a local directory.
     #[cfg(feature = "hub")]
-    pub fn from_pretrained(path_or_repo_id: &str, device: &Device) -> Result<Self> {
-        Self::from_dir(crate::loading::resolve_checkpoint(path_or_repo_id)?, device)
+    pub fn from_hub(repo_id: &str, device: &Device) -> Result<Self> {
+        Self::from_dir(crate::loading::download(repo_id)?, device)
     }
 
     pub fn with_max_context(mut self, max_context: usize) -> Self {

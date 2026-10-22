@@ -19,14 +19,13 @@
 mod config;
 mod forecaster;
 mod layers;
-pub mod loading;
+mod loading;
 mod masks;
 mod model;
 mod scaler;
 
 pub use config::{AttentionGate, Config, LayerKind};
 pub use forecaster::{Covariates, Forecast, ForecastInput, ForecastOptions, TimestralForecaster};
-pub use loading::load_model;
 pub use model::{Role, TimestralModel};
 
 #[derive(Debug, thiserror::Error)]

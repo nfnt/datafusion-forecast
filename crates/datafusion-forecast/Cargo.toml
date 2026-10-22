@@ -36,4 +36,4 @@ tokio.workspace = true
 
 [[example]]
 name = "sql"
-required-features = ["timestral"]
+required-features = ["hub"]

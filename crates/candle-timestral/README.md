@@ -12,7 +12,7 @@ use candle_core::Device;
 use candle_timestral::{ForecastInput, ForecastOptions, TimestralForecaster};
 
 let forecaster = TimestralForecaster::from_dir("path/to/Timestral-5M", &Device::Cpu)?;
-// or, with the `hub` feature: TimestralForecaster::from_pretrained("mistralai/Timestral-5M", &Device::Cpu)?
+// or, with the `hub` feature: TimestralForecaster::from_hub("mistralai/Timestral-5M", &Device::Cpu)?
 
 // context: (batch, variates, T) flattened, NaN = missing
 let input = ForecastInput::new(&context, batch, variates)
@@ -28,14 +28,14 @@ forecast.quantile(0.9)?;  // (batch, variates, 96)
 
 Features:
 
-| feature      |                                                                              |
-| ------------ | ---------------------------------------------------------------------------- |
-| `hub`        | `from_pretrained` and Hub ids in `loading::resolve_checkpoint`, via `hf-hub` |
-| `metal`      | Apple GPUs (`Device::new_metal(0)?`)                                         |
-| `cuda`       | NVIDIA GPUs (`Device::new_cuda(0)?`)                                         |
-| `cudnn`      | `cuda` plus cuDNN kernels                                                    |
-| `accelerate` | Apple's Accelerate framework for CPU matrix multiplication                   |
-| `mkl`        | Intel MKL for CPU matrix multiplication                                      |
+| feature      |                                                            |
+| ------------ | ---------------------------------------------------------- |
+| `hub`        | `from_hub` for Hugging Face Hub repos, via `hf-hub`        |
+| `metal`      | Apple GPUs (`Device::new_metal(0)?`)                       |
+| `cuda`       | NVIDIA GPUs (`Device::new_cuda(0)?`)                       |
+| `cudnn`      | `cuda` plus cuDNN kernels                                  |
+| `accelerate` | Apple's Accelerate framework for CPU matrix multiplication |
+| `mkl`        | Intel MKL for CPU matrix multiplication                    |
 
 ```sh
 cargo run --release -p candle-timestral --features hub --example forecast -- mistralai/Timestral-5M
