@@ -16,13 +16,13 @@
 //! # Ok::<(), candle_timestral::Error>(())
 //! ```
 
-pub mod config;
-pub mod forecaster;
-pub mod layers;
+mod config;
+mod forecaster;
+mod layers;
 pub mod loading;
-pub mod masks;
-pub mod model;
-pub mod scaler;
+mod masks;
+mod model;
+mod scaler;
 
 pub use config::{AttentionGate, Config, LayerKind};
 pub use forecaster::{Covariates, Forecast, ForecastInput, ForecastOptions, TimestralForecaster};
@@ -30,6 +30,7 @@ pub use loading::load_model;
 pub use model::{Role, TimestralModel};
 
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum Error {
     #[error(transparent)]
     Candle(#[from] candle_core::Error),

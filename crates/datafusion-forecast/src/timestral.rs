@@ -62,7 +62,7 @@ impl From<TimestralForecaster> for Timestral {
 impl std::fmt::Debug for Timestral {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Timestral")
-            .field("max_context", &self.forecaster.max_context)
+            .field("max_context", &self.forecaster.max_context())
             .field("symmetric_averaging", &self.symmetric_averaging)
             .field("clip_nonnegative", &self.clip_nonnegative)
             .finish_non_exhaustive()
@@ -79,7 +79,7 @@ impl Forecaster for Timestral {
     }
 
     fn max_context(&self) -> usize {
-        self.forecaster.max_context
+        self.forecaster.max_context()
     }
 
     fn forecast(&self, request: &ForecastRequest) -> Result<Vec<f32>> {
@@ -90,11 +90,9 @@ impl Forecaster for Timestral {
         if let Some((values, channels)) = request.known {
             input = input.with_known_covariates(values, channels);
         }
-        let options = ForecastOptions {
-            prediction_length: request.horizon,
-            symmetric_averaging: self.symmetric_averaging,
-            clip_nonnegative: self.clip_nonnegative,
-        };
+        let options = ForecastOptions::new(request.horizon)
+            .with_symmetric_averaging(self.symmetric_averaging)
+            .with_clip_nonnegative(self.clip_nonnegative);
         let forecast = self
             .forecaster
             .forecast(&input, &options)

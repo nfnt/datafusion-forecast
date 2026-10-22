@@ -139,11 +139,9 @@ mod cases {
             .forecast(&ForecastInput::univariate(&ctx), &ForecastOptions::new(96))
             .unwrap();
         assert_close(g, "a", &out.quantiles, &g.f32("a.quantiles"));
-        let raw_opts = ForecastOptions {
-            symmetric_averaging: false,
-            clip_nonnegative: false,
-            ..ForecastOptions::new(96)
-        };
+        let raw_opts = ForecastOptions::new(96)
+            .with_symmetric_averaging(false)
+            .with_clip_nonnegative(false);
         let raw = fc
             .forecast(&ForecastInput::univariate(&ctx), &raw_opts)
             .unwrap();

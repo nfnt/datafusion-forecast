@@ -46,7 +46,7 @@ pub fn load_model(dir: impl AsRef<Path>, device: &Device) -> Result<TimestralMod
 /// Download `config.json` and `model.safetensors` of a Hub repo (e.g. `mistralai/Timestral-5M`)
 /// to the Hugging Face cache, or find them there; returns their directory.
 #[cfg(feature = "hub")]
-pub fn download(repo_id: &str) -> Result<PathBuf> {
+pub(crate) fn download(repo_id: &str) -> Result<PathBuf> {
     let (owner, name) = hf_hub::split_id(repo_id);
     let repo = hf_hub::HFClientSync::new()?.model(owner, name);
     let config = repo.download_file().filename(CONFIG_FILE).send()?;
