@@ -31,6 +31,15 @@ jobs:
         run: cargo clippy --features datafusion-forecast/hub -- -D warnings
       - name: cargo test
         run: cargo test --locked
+      - name: cargo check (no default features)
+        run: cargo check --locked -p datafusion-forecast --no-default-features
+      - name: cargo doc
+        run: cargo doc --locked --no-deps --features datafusion-forecast/hub
+        env:
+          RUSTDOCFLAGS: -D warnings
+      # Builds both crates from their packaged sources, as `cargo publish` would.
+      - name: cargo package
+        run: cargo package --locked --workspace
       # Parity with the Python reference on Timestral-5M. The larger checkpoints run in the manual
       # `Golden` workflow. Revisions are pinned: bumping one means regenerating its fixture.
       - name: fetch Timestral-5M
@@ -39,6 +48,17 @@ jobs:
         run: "cargo test --locked -p candle-timestral --test golden -- --ignored golden_5m::"
         env:
           TIMESTRAL_5M_DIR: ${{ runner.temp }}/Timestral-5M
+
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Keep in sync with `rust-version` in Cargo.toml.
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          toolchain: "1.95"
+      - name: cargo check
+        run: cargo check --locked --workspace --all-targets
 
   deny:
     runs-on: ubuntu-latest
