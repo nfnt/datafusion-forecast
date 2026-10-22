@@ -1,5 +1,8 @@
 # datafusion-forecast
 
+[![CI](https://github.com/nfnt/datafusion-forecast/actions/workflows/check.yml/badge.svg)](https://github.com/nfnt/datafusion-forecast/actions/workflows/check.yml)
+[![license](https://img.shields.io/github/license/nfnt/datafusion-forecast.svg)](LICENSE)
+
 Forecasts with Mistral AI's [Timestral](https://github.com/mistralai/timestral) time-series models inside
 [Apache DataFusion](https://datafusion.apache.org) SQL. The `forecast` aggregate function treats each group as a series
 and returns a median and 21 quantiles for each step ahead. The model runs natively in Rust on
