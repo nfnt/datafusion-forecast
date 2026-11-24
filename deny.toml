@@ -14,19 +14,21 @@ yanked = "deny"
 ignore = [
     # 'paste' is unmaintained (archived by its author, no replacement
     # planned). It's a transitive compile-time proc-macro dependency via
-    # candle-core -> gemm, several levels below anything this project
-    # controls; it isn't linked into the built binaries. There is no safe
-    # upgrade -- re-evaluate when candle-core drops the dependency.
+    # candle-core -> gemm (also through pulp) and candle-core -> tokenizers,
+    # below anything this project controls; it isn't linked into the built
+    # binaries. There is no safe upgrade -- re-evaluate when candle-core's
+    # dependencies drop it.
     "RUSTSEC-2024-0436",
-    # zip 8.x: unsafe behaviour in ZipArchive::extract / ZipStreamReader::extract
-    # (SUID bits, symlink escape, permissions applied through symlinks). Pulled in
-    # by candle-core, which only reads entries in memory (by_name/by_index) for
-    # npy/pickle loading and never calls extract(); we load safetensors only.
-    # Fixed in zip >= 9, but candle-core 0.11 pins ^8.6 -- drop these once candle
-    # moves to zip 9.
-    "RUSTSEC-2026-0367",
-    "RUSTSEC-2026-0368",
-    "RUSTSEC-2026-0369",
+    # chrono, chrono-tz and humantime are unmaintained (no known vulnerability,
+    # no patched versions). All are transitive runtime dependencies via
+    # datafusion -> arrow / object_store; we don't use them directly.
+    # Re-evaluate on each datafusion upgrade:
+    # https://github.com/apache/arrow-rs/issues/9183 (chrono, chrono-tz)
+    # https://github.com/apache/arrow-rs-object-store/issues/909 (chrono)
+    # https://github.com/apache/arrow-rs-object-store/issues/292 (humantime)
+    "RUSTSEC-2026-0542",
+    "RUSTSEC-2026-0543",
+    "RUSTSEC-2026-0555",
 ]
 
 [licenses]

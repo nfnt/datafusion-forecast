@@ -123,10 +123,6 @@ ctx.register_udaf(AggregateUDF::from(
   [Calendar steps and sparse groups](#calendar-steps-and-sparse-groups).
 - Groups are buffered in memory until the aggregate is evaluated. The forecast runs on the calling thread
   during evaluation.
-- DataFusion 55 drops sort keys after a `GROUP BY` key, even after an `unnest`
-  ([apache/datafusion#25844](https://github.com/apache/datafusion/issues/25844), fixed after 55.2.0).
-  `ORDER BY store, ts` over the unnested result therefore sorts by `store` only; use `ORDER BY ts, store` or
-  sort in a separate step.
 - Candle and DataFusion types are part of the public API, so a new minor version of Candle or major version of
   DataFusion means a breaking release of these crates.
 
