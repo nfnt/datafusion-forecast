@@ -41,8 +41,7 @@ async fn main() -> Result<()> {
                                            NULL, named_struct('promo', promo))) AS f
              FROM sales GROUP BY store
          )
-         ORDER BY ts, store
-         LIMIT 12"
+         ORDER BY store, ts"
     ))
     .await?
     .show()
